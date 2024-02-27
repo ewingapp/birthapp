@@ -20,7 +20,7 @@ export class TaskService {
         @InjectQueue('birthday') private readonly birthdayQueue: Queue,
     ) { }
 
-    @Cron(CronExpression.EVERY_10_SECONDS)
+    @Cron(CronExpression.EVERY_6_HOURS)
     async scheduleBirthdayMessages() {
         const users = await this.userService.findByBirthdayToday()
 
@@ -37,15 +37,15 @@ export class TaskService {
 
             console.log("Send birthday message to User: ", user.first_name)
 
-            await this.birthdayQueue.add('sendBirthdayMessage', { userId: user.id, email: user.email }, { delay });
+            await this.birthdayQueue.add('sendBirthdayMessage', { userId: user.id }, { delay });
         })
     }
 
-    async sendBirthdayMessage(jobData: { userId: number; email: string }): Promise<AxiosResponse> {
-        const { userId, email } = jobData;
+    async sendBirthdayMessage(jobData: { userId: number }): Promise<AxiosResponse> {
+        const { userId } = jobData;
         const user = await this.userService.findOne(userId);
         const birthdayMessage = `Happy Birthday, ${user.first_name}! 🎉🎂`;
 
-        return axios.post('https://email-service.digitalenvision.com.au/send-email', { email, message: birthdayMessage });
+        return axios.post('https://email-service.digitalenvision.com.au/send-email', { email: user.email, message: birthdayMessage });
     }
 }
